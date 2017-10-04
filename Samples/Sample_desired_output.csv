@@ -1,0 +1,28 @@
+Item ID	Level	Unit Title	parent ID	Access Point Type	Access Point Value
+1000	Record group	x		Language	German
+1000	Record group	x		Language	English
+1000	Record group	x		Language	Polish
+1000	Record group	x		Language	Russian
+1000	Record group	x		Language	Yiddish
+1000	Record group	x		Language	Belarusian
+1200	Subrecord group	z	1000	Language	German
+1200	Subrecord group	z	1000	Language	Russian
+1200	Subrecord group	z	1000	Language	Polish
+1200	Subrecord group	z	1000	Language	English
+1200	Subrecord group	z	1000	Language	Yiddish
+1200	Subrecord group	z	1000	Language	Belarusian
+1300	Collection	g	1200	Language	English
+1300	Collection	g	1200	Language	Yiddish
+1400	Collection	f	1200	Language	German
+1400	Collection	f	1200	Language	Polish
+1400	Collection	f	1200	Language	Russian
+1500	Subrecord group	h	1000	Language	German
+1500	Subrecord group	h	1000	Language	English
+1500	Subrecord group	h	1000	Language	Polish
+1600	Collection	i	1200	Language	Polish
+1600	Collection	i	1200	Language	Belarusian
+1600	Collection	i	1200	Language	Yiddish
+1600	Collection	i	1200	Language	English
+1700	Collection	j	1500	Language	English
+1700	Collection	j	1500	Language	German
+1700	Collection	j	1500	Language	Polish

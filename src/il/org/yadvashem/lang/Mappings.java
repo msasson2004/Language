@@ -1,83 +1,142 @@
 package il.org.yadvashem.lang;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
-
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class Mappings {
 	public node Root;
-	private File input_file;
-	private String Header;
-		
-	public Mappings(File file) {
-		input_file = file;
+	private String input_file;
+	private String[] Header;
+	public HashMap<String, node> hash;
+    public ArrayList<node> Order;
+	
+	public Mappings() {
+		hash = new HashMap<String, node>();
+		Order = new ArrayList<node>();
 	}
 	
-	public HashMap<String, node> build() 
-	{
-        try 
+	public String AddFile(File file) {
+		input_file = file.getAbsolutePath();
+
+		try 
         {
-        	HashMap<String, node> hash = new HashMap<String, node>();
-            BufferedReader b = new BufferedReader(new FileReader(input_file));
-            String readLine; // always skip the first line
-            Header = b.readLine();
+        	Reader reader = Files.newBufferedReader(Paths.get(input_file));
+            CSVReader csvReader = new CSVReader(reader);
+        	
+            String[] nextRecord;
+
+            // always skip the first line
+            Header = csvReader.readNext();            
+
             if(Header == null)
-            	return null;
+            	return "Header is missing";
             
             Root = null;
-            
-            while ((readLine = b.readLine()) != null) 
+            node nd = null;
+            while ((nextRecord = csvReader.readNext()) != null) 
             {
-//                System.out.println(readLine);
-                String ary[] = readLine.split("\t");
-                if(ary != null && ary.length > 4)
-                {
-                	String id = ary[0];
-                	String title = ary[2];
-                	String level = ary[1];
-                	String type = ary[4];
-                	node nd = hash.get(id);
-                	String parentS = ary[3];
-                	node parent = null;
-                	if(parentS != null && !parentS.isEmpty()) {
-                		parent = hash.get(parentS);
-                		if(parent == null) {
-                			System.out.println("Exception: could not find parent " + parentS);
-                			return null;
-                		}
-                	}
-                	String lang = ary[5];
-                	if(nd == null) {
-	                	nd = new node(id, lang, parent, title, level, type);
-	                	hash.put(id, nd);
-                	}
-                	else nd.AddLanguage(lang); 
-                	if(Root == null && parent == null)
-                		Root = nd;
-                }
+            	if(nextRecord.length == 0) 
+            	{
+            		if(nd == null)
+            			throw new FileFormatException("Bad format file: " + input_file);
+            		nd.AddData(nextRecord);
+            	}
+            	else 
+            	{          
+            		if(nd == null)
+            			nd = new node(nextRecord);
+            		else 
+            		{
+            			String id = nextRecord[0].replace("\"", "");
+            			if(id.equals(nd.ID))
+            				nd.AddData(nextRecord);
+            			else
+            			{ 
+            				AddNode(nd);
+            				nd = new node(nextRecord);
+            			}            			 
+            		}            		
+            	}            		
             }
-            return hash;
+            AddNode(nd);
+            csvReader.close();            
+            return null;
         } 
 	    catch (FileNotFoundException e) {
-	    	System.out.println(e.getMessage());
-	    	return null;
+	    	String err = e.getMessage();
+	    	System.out.println(err);
+	    	return err;
+		} 
+	    catch (FileFormatException e) {
+	    	String err = e.getMessage();
+	    	System.out.println(err);
+	    	return err;
 		} 
         catch (IOException e) {
-            System.out.println("Exception: " + e.getMessage());
-            return null;
+	    	String err = e.getMessage();
+            System.out.println(err);
+            return err;
         }
     }
 	
-	public void PrintHeader(BufferedWriter writer) 
+	private void AddNode(node nd) 
+	{
+		if(nd.ParentID != null && !nd.ParentID.isEmpty())
+		{
+			if(nd.ParentID.equals(new String("root"))) {
+				Root = nd;
+			}
+			else {
+				node parent = hash.get(nd.ParentID);
+				if(parent != null) {
+					nd.Parent = parent;
+					parent.AddChild(nd);
+		        	nd.CheckParentLanguages();
+				}
+			}
+		}
+		Order.add(nd);
+		// no else. If it is empty or null, ignore.
+		Iterator<Entry<String, node>> it = hash.entrySet().iterator();
+	    while (it.hasNext()) 
+	    {
+	        Map.Entry<String, node> pair = (Map.Entry<String, node>)it.next();
+	        node child = pair.getValue();
+	        // if it's root or parentId = null, skip. Otherwise if this child is a parent 
+	        // node of nd, set it as nd parent
+	        if(child != Root && child.ParentID != null && child.ParentID.equals(nd.ID) && child.Parent == null)
+	        {
+	        	child.Parent = nd;
+	        	nd.AddChild(child);
+	        	child.CheckParentLanguages();
+	        }
+	    }	
+		
+	    hash.put(nd.ID, nd);	    
+	}
+	
+	public void Print(CSVWriter writer) 
 	{
 		try 		
 		{
-			writer.write(Header + "\n");		
+			writer.writeNext(Header);	
+			for(int i=0;i<Order.size();i++) 
+			{
+				node nd = Order.get(i);
+				nd.Print(writer);
+			}
 		}
 		catch(Exception e) {
 			System.out.println(e.getMessage());			

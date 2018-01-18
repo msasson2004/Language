@@ -1,19 +1,17 @@
 package il.org.yadvashem.lang;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.util.HashMap;
+import com.opencsv.CSVWriter;
 
 public class App {
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		// First get the directory name from argument
     	String folder_input, result_file, out_folder;
     	File[] listOfFiles;
 
     	if(args.length > 0) {
     		folder_input = args[0];
-        	out_folder = folder_input + "_result";
+        	out_folder = folder_input + "_langFix";
         	File theDir = new File(out_folder);
         	
         	try 
@@ -36,20 +34,23 @@ public class App {
 	
     	try 
     	{	
+    		// listOfFiles contains all files found in the input directory.
 	    	for(int i=0;i < listOfFiles.length;i++) 
 	    	{
-	    		if (listOfFiles[i].isFile()) 
+	    		if (listOfFiles[i].isFile()) // if element is a file 
 	    		{	   
 	                String file_name = listOfFiles[i].getName();
 	            	result_file = out_folder + "/" + file_name;        	
 			        System.out.println("working on: " + file_name);
-			    	Mappings map = new Mappings(listOfFiles[i]);
-			    	HashMap<String, node> hash = map.build();	
-			    	if(hash == null)
+			        Mappings map = new Mappings();
+			        String err = map.AddFile(listOfFiles[i]);
+			    	if(err != null && !err.isEmpty())
+			    	{
+			    		System.out.println("Error encountered. Stopping");
 			    		break;
-			    	BufferedWriter writer = new BufferedWriter( new FileWriter( result_file ));
-			    	map.PrintHeader(writer);
-			    	map.Root.Print(writer);
+			    	}
+			    	CSVWriter writer = new CSVWriter( new FileWriter( result_file ));
+			    	map.Print(writer);
 			    	writer.flush();
 			    	writer.close();
 	    		}
